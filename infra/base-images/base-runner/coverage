@@ -417,6 +417,18 @@ elif [[ $FUZZING_LANGUAGE == "jvm" ]]; then
     cp -r $DUMPS_DIR/${fuzz_target}_classes/* $classes_dir/
   done
 
+  # Dump classes in jar file to dump directory
+  for jar_file in $(ls $OUT/*.jar)
+  do
+    if [[ $jar_file != $OUT/jazzer* ]]
+    then
+      tempdir=$(mktemp -d)
+      cd $tempdir && jar xvf $jar_file && cd -
+      cp -r $tempdir/* $classes_dir/
+      rm -r $tempdir
+    fi
+  done
+
   # Heuristically determine source directories based on Maven structure.
   # Always include the $SRC root as it likely contains the fuzzer sources.
   sourcefiles_args=(--sourcefiles $OUT/$SRC)
