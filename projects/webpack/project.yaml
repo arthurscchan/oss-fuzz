@@ -1,0 +1,11 @@
+homepage: https://webpack.js.org/
+language: javascript
+main_repo: https://github.com/webpack/webpack
+fuzzing_engines:
+- libfuzzer
+sanitizers:
+- none
+vendor_ccs:
+- david@adalogics.com
+- adam@adalogics.com
+- arthur.chan@adalogics.com
