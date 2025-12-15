@@ -14,6 +14,4 @@
 # limitations under the License.
 #
 ################################################################################
-
-cd $SRC/libpg_query
 make clean test
