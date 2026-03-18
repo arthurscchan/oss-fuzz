@@ -22,6 +22,7 @@ fi
 ./autogen.sh && ./configure --disable-doxygen --disable-manpages \
                             --with-openssl --enable-tests        \
                             --disable-thread-safe                \
+                            --enable-observe-persist             \
     && make -j$(nproc)
 
 # build all fuzzer targets
