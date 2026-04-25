@@ -1,0 +1,15 @@
+homepage: "https://freeunit.org"
+language: c
+primary_contact: "team@freeunit.org"
+auto_ccs:
+  - "team@freeunit.org"
+  - "pkillarjun@protonmail.com"
+fuzzing_engines:
+  - libfuzzer
+  - afl
+  - honggfuzz
+sanitizers:
+  - address
+  - memory
+  - undefined
+main_repo: 'https://github.com/freeunitorg/freeunit'
