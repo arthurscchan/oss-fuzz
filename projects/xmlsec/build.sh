@@ -76,12 +76,34 @@ done
 cp $SRC/xmlsec/apps/oss-fuzz/config/*.options $OUT/
 wget -O $OUT/xml.dict https://raw.githubusercontent.com/mirrorer/afl/master/dictionaries/xml.dict
 
-# Seed corpus for the DSig verification fuzzer
-zip -j $OUT/xmlsec_dsig_verify_fuzzer_seed_corpus.zip \
-    $SRC/xmlsec/tests/phaos-xmldsig-three/signature*.xml \
-    $SRC/xmlsec/tests/merlin-exc-c14n-one/*.xml \
-    $SRC/xmlsec/tests/merlin-xmldsig-twenty-three/signature*.xml \
-    2>/dev/null || true
+# Preserve signed DSig fixtures byte-for-byte; keep the selection explicit.
+dsig_fixtures=(
+    merlin-xmldsig-twenty-three/signature-enveloped-dsa.xml
+    merlin-xmldsig-twenty-three/signature-enveloping-rsa.xml
+    merlin-xmldsig-twenty-three/signature-enveloping-b64-dsa.xml
+    merlin-exc-c14n-one/exc-signature.xml
+    merlin-c14n-three/signature.xml
+    merlin-xpath-filter2-three/sign-spec.xml
+    aleksey-xmldsig-01/filter2-relative-sha256-rsa-sha256.xml
+    xmldsig11-interop-2012/signature-enveloping-sha256-rsa-sha256.xml
+    xmldsig11-interop-2012/signature-enveloping-p256_sha256.xml
+)
+dsig_corpus="$WORK/dsig_corpus"
+rm -rf "$dsig_corpus"
+mkdir -p "$dsig_corpus"
+for fixture in \
+    "$SRC/xmlsec/tests/phaos-xmldsig-three/"signature*.xml \
+    "$SRC/xmlsec/tests/merlin-exc-c14n-one/"*.xml \
+    "$SRC/xmlsec/tests/merlin-xmldsig-twenty-three/"signature*.xml; do
+    relative_fixture="${fixture#"$SRC/xmlsec/tests/"}"
+    cp "$fixture" "$dsig_corpus/${relative_fixture//\//-}"
+done
+for fixture in "${dsig_fixtures[@]}"; do
+    cp "$SRC/xmlsec/tests/$fixture" "$dsig_corpus/${fixture//\//-}"
+done
+cp "$SRC/xmlsec/apps/oss-fuzz/corpus/xmlsec_dsig_verify/"*.xml "$dsig_corpus/"
+rm -f "$OUT/xmlsec_dsig_verify_fuzzer_seed_corpus.zip"
+zip -j "$OUT/xmlsec_dsig_verify_fuzzer_seed_corpus.zip" "$dsig_corpus"/*
 
 # Seed corpus for the KeyInfo fuzzer: test files whose <KeyInfo> covers KeyName,
 # the X509Data variants, RetrievalMethod and EncryptedKey
