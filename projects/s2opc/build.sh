@@ -23,7 +23,9 @@ fi
 MBEDTLS_BUILD=$WORK/mbedtls
 EXPAT_BUILD=$WORK/expat
 S2OPC_BUILD=$WORK/s2opc
-SAMPLES=$SRC/S2OPC-fuzzing-data
+SAMPLES=$WORK/s2opc-seeds
+mkdir -p "$SAMPLES"
+cp -a "$SRC/S2OPC-fuzzing-data/." "$SAMPLES/"
 
 # Build the dependencies
 ## Configure mbedtls to disable support of the AES-NI instructions, known to cause error with some sanitizers
@@ -75,8 +77,52 @@ cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo \
 cmake --build . --target fuzzers
 cp bin/* $OUT
 
+for harness_dir in "$SRC/S2OPC/tests/ClientServer/unit_tests/fuzzing" \
+                           "$SRC/S2OPC/tests/PubSub/fuzzing"; do
+      for resource in "$harness_dir"/*.dict "$harness_dir"/*.options; do
+            if [ -f "$resource" ]; then
+                  cp "$resource" "$OUT/"
+            fi
+      done
+done
+
 # Build the corpora
-cd $SAMPLES
-for dir in $(find -maxdepth 1 -type d -not -name ".*"); do
-    find $dir -exec zip -j $OUT/$(basename $dir)_fuzzer_seed_corpus.zip {} +
+for generator in "$S2OPC_BUILD/fuzz_tools/"*_fuzzer_seed_generator; do
+      [ -x "$generator" ] || continue
+      target="$(basename "$generator" _seed_generator)"
+      if [ ! -x "$OUT/$target" ]; then
+            echo "No fuzzer matches seed generator: $generator" >&2
+            exit 1
+      fi
+      dir="$SAMPLES/${target%_fuzzer}"
+      mkdir -p "$dir"
+      "$generator" "$dir"
+done
+
+for dir in "$SAMPLES"/*; do
+      [ -d "$dir" ] || continue
+      target="$(basename "$dir")_fuzzer"
+      if [ ! -x "$OUT/$target" ]; then
+            echo "No fuzzer matches corpus directory: $dir" >&2
+            exit 1
+      fi
+      archive="$OUT/${target}_seed_corpus.zip"
+      pushd "$dir" >/dev/null
+      find . -type f | LC_ALL=C sort > "$WORK/${target}_seeds.txt"
+      if [ ! -s "$WORK/${target}_seeds.txt" ]; then
+            echo "Empty seed corpus: $dir" >&2
+            exit 1
+      fi
+      rm -f "$archive"
+      zip -q "$archive" -@ < "$WORK/${target}_seeds.txt"
+      popd >/dev/null
+done
+
+for executable in "$OUT/"*_fuzzer; do
+      [ -x "$executable" ] || continue
+      target="$(basename "$executable")"
+      if [ ! -s "$OUT/${target}_seed_corpus.zip" ]; then
+            echo "Missing seed archive for $target" >&2
+            exit 1
+      fi
 done
