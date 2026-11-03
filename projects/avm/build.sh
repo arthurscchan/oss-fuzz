@@ -43,3 +43,10 @@ cmake --build "$build_dir" --parallel "$(nproc)"
   "$SRC/avm/examples/av2_dec_fuzzer.cc" \
   -o "$OUT/av2_dec_fuzzer" \
   "$LIB_FUZZING_ENGINE" "$build_dir/libavm.a"
+
+# Prepare seed corpus/dict for fuzzers
+seeds_dir="$WORK/avm_dec_seeds"
+rm -rf "$seeds_dir"
+mkdir -p "$seeds_dir"
+python3 "$SRC/avm/examples/gen_av2_dec_fuzzer_seeds.py" "$seeds_dir"
+zip -j -q "$OUT/av2_dec_fuzzer_seed_corpus.zip" "$seeds_dir"/*
