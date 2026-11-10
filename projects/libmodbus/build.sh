@@ -14,6 +14,7 @@
 # limitations under the License.
 #
 ################################################################################
+# The fuzzers and their seed corpora live upstream in libmodbus/fuzz.
 
 cd fuzz
 make all
@@ -21,7 +22,7 @@ make all
 cp FuzzClient $OUT/FuzzClient
 cp FuzzServer $OUT/FuzzServer
 
-pushd $SRC/oss-fuzz-bloat/libmodbus/
-cp FuzzClient_seed_corpus.zip $OUT/FuzzClient_seed_corpus.zip
-cp FuzzServer_seed_corpus.zip $OUT/FuzzServer_seed_corpus.zip
-popd
+# Seed corpora are owned upstream (fuzz/FuzzClient.seed, fuzz/FuzzServer.seed).
+for CORPUS in FuzzClient.seed FuzzServer.seed; do
+    (cd "$CORPUS" && zip -q -r $OUT/${CORPUS%%.*}_seed_corpus.zip .)
+done
